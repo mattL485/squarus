@@ -65,7 +65,7 @@ vector<tuple<int, int>> Board::findCorners()
 	vector <tuple<int, int>> cornerVector;
 	//may create vector of all placed piece coordinates so that performance is increased with a small
 	//storage cost
-	
+
 	for (int pieceIteratorX = 0; pieceIteratorX < size; pieceIteratorX++)
 	{
 		for (int pieceIteratorY = 0; pieceIteratorY < size; pieceIteratorY++)
@@ -73,14 +73,74 @@ vector<tuple<int, int>> Board::findCorners()
 			//does the piece belong to the ai
 			if (getSquare(pieceIteratorX, pieceIteratorY) == 1)
 			{
-				if (getSquare(pieceIteratorX - 1, pieceIteratorY - 1))
+				if (getSquare(pieceIteratorX - 1, pieceIteratorY - 1) == 0)
 				{
 					cornerVector.push_back(make_tuple(pieceIteratorX - 1, pieceIteratorY - 1));
-					
+				}
+				if (getSquare(pieceIteratorX - 1, pieceIteratorY + 1) == 0)
+				{
+					cornerVector.push_back(make_tuple(pieceIteratorX - 1, pieceIteratorY + 1));
+				}
+				if (getSquare(pieceIteratorX + 1, pieceIteratorY - 1) == 0)
+				{
+					cornerVector.push_back(make_tuple(pieceIteratorX + 1, pieceIteratorY - 1));
+				}
+				if (getSquare(pieceIteratorX + 1, pieceIteratorY + 1) == 0)
+				{
+					cornerVector.push_back(make_tuple(pieceIteratorX + 1, pieceIteratorY + 1));
 				}
 			}
 		}
 	}
+
+	for (int cornerIterator = 0; cornerIterator < cornerVector.size(); cornerIterator++)
+	{
+		int tempX = get<0>(cornerVector[cornerIterator]);
+		int tempY = get<1>(cornerVector[cornerIterator]);
+		if (tempY != 0 && getSquare(tempX, tempY - 1) != 0)
+		{
+			//this is where a stack would be very convenient to pop
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}
+		else if (getSquare(tempX, tempY + 1) != 0)
+		{
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}
+		else if (tempX != 0 && getSquare(tempX - 1, tempY) != 0)
+		{
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}
+		else if (getSquare(tempX + 1, tempY) != 0)
+		{
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}
+		else if (tempX < 0)
+		{
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}		
+		else if (tempY < 0)
+		{
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}		
+		else if (tempX > size)
+		{
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}		
+		else if (tempY > size)
+		{
+			cornerVector.erase(cornerVector.begin() + cornerIterator);
+			cornerIterator--;
+		}
+	}
+
+	return cornerVector;
 }
 
 //I will add a paramter that indicates which piece should be added and where.
@@ -93,8 +153,10 @@ bool Board::placePiece()
 	//rotations could be handled by considering them in one of four posititions:
 	//1,2,3, or 4 referring to the quadrants the shape would be in if they were rotated
 
-	int size = shapeVector.size();
-	for (int tupleIt = 0; tupleIt < size; tupleIt++)
+	//finds the available corners to consider placement
+	findCorners();
+
+	for (int tupleIt = 0; tupleIt < shapeVector.size(); tupleIt++)
 	{
 		//may call placement checking method here (overlap and corner check, range is checked elesewhere):
 		//perhaps a lower range check could be avoided via the use of uint's, but rotation math could get ugly
@@ -103,6 +165,7 @@ bool Board::placePiece()
 		//may consider using a queue or stack
 		shapeVector.pop_back();
 	}
+
 	return false;
 }
 
@@ -126,7 +189,14 @@ bool Board::setSquare(int x, int y, int value)
 int Board::getSquare(int x, int y)
 {
 	//bounds checking of both x and y, throw range error.
-	rangeCheck(x, y);
+	try
+	{
+		rangeCheck(x, y);
+	}
+	catch (std::range_error)
+	{
+		return -1;
+	}
 
 	return placements[x][y];
 }
