@@ -22,11 +22,36 @@ Board::Board(int dimensions)
 	 is the shape in the vector below
 	 */
 
+	piece.head.value = 5;
+	piece.head.orientation = one;
+
 	shapeVector.push_back(make_tuple(0, 0, 1)); //testing
 	shapeVector.push_back(make_tuple(0, 1, 1)); //testing
 	shapeVector.push_back(make_tuple(1, 1, 1)); //testing
 	shapeVector.push_back(make_tuple(1, 2, 1)); //testing
 	shapeVector.push_back(make_tuple(2, 2, 1)); //testing
+	
+	piece.head.shapesVector = shapeVector;
+
+
+	//prelimnary placement of first piece:
+	for (int tupleIt = 0; tupleIt < shapeVector.size(); tupleIt++)
+	{
+		setSquare(get<0>(shapeVector.back()), get<1>(shapeVector.back()), std::get<2>(shapeVector.back()));
+		//may consider using a queue or stack
+		shapeVector.pop_back();
+		tupleIt--;
+	}
+
+	//should be done in construction to add all pieces to piece list
+	Atom newPiece(5);
+	newPiece.shapesVector.push_back(make_tuple(0, 0, 1));
+	newPiece.shapesVector.push_back(make_tuple(1, 0, 1));
+	newPiece.shapesVector.push_back(make_tuple(2, 0, 1));
+	newPiece.shapesVector.push_back(make_tuple(3, 0, 1));
+	newPiece.shapesVector.push_back(make_tuple(4, 0, 1));
+	newPiece.orientation = one;
+	pieceVector.push_back(newPiece);
 
 	//for (int sizeIteratorX = 0; sizeIteratorX < size; sizeIteratorX++)
 	//{
@@ -62,9 +87,17 @@ void Board::rangeCheck(int x, int y)
 
 vector<tuple<int, int>> Board::findCorners()
 {
+	//this vector is declared locally within this method
+	//so that the cornerVector is always new
 	vector <tuple<int, int>> cornerVector;
 	//may create vector of all placed piece coordinates so that performance is increased with a small
 	//storage cost
+
+	if (playersVector.empty())//or if the first player just went
+	{
+		cornerVector.push_back(make_tuple(0, 0));
+		return cornerVector;
+	}
 
 	for (int pieceIteratorX = 0; pieceIteratorX < size; pieceIteratorX++)
 	{
@@ -153,18 +186,24 @@ bool Board::placePiece()
 	//rotations could be handled by considering them in one of four posititions:
 	//1,2,3, or 4 referring to the quadrants the shape would be in if they were rotated
 
+	//may call placement checking method here (overlap and corner check, range is checked elesewhere):
+	//perhaps a lower range check could be avoided via the use of uint's, but rotation math could get ugly
+
 	//finds the available corners to consider placement
-	findCorners();
 
-	for (int tupleIt = 0; tupleIt < shapeVector.size(); tupleIt++)
+
+	//finds available corner to place the piece
+	vector <tuple<int, int>> potentialCornerVector = findCorners();
+
+	//iterate through piecevector and create a child for each possibility
+	for (int potentialPieceIterator = 0; potentialPieceIterator < pieceVector.size(); potentialPieceIterator++)
 	{
-		//may call placement checking method here (overlap and corner check, range is checked elesewhere):
-		//perhaps a lower range check could be avoided via the use of uint's, but rotation math could get ugly
-
-		setSquare(get<0>(shapeVector.back()), get<1>(shapeVector.back()), std::get<2>(shapeVector.back()));
-		//may consider using a queue or stack
-		shapeVector.pop_back();
+		/*
+		 1. check if the piece can be placed at the available corner spaces
+		 2. if it can, add the piece to the tail of the currentHead.
+		*/
 	}
+
 
 	return false;
 }
@@ -182,6 +221,7 @@ bool Board::setSquare(int x, int y, int value)
 	}
 	rangeCheck(x, y);
 
+	playersVector.push_back(make_tuple(x, y, value));
 	placements[x][y] = value;
 	return true;
 }
@@ -205,4 +245,15 @@ Board::Board()
 {
 	Board(14);
 
+}
+
+Board::Atom::Atom(int value)
+{
+	value = value;
+}
+
+Board::Atom::Atom(vector<tuple<int, int, int>> shapesVector)
+{
+	//insert copy constructor
+	shapesVector = shapesVector;
 }
